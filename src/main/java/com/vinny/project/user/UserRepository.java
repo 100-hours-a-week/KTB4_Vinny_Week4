@@ -1,6 +1,5 @@
 package com.vinny.project.user;
 
-import com.vinny.project.user.exception.DuplicateNickname;
 import com.vinny.project.user.exception.UserNotFoundException;
 import org.springframework.stereotype.Repository;
 
@@ -12,12 +11,15 @@ public class UserRepository {
     private final Map<String, User> users = new ConcurrentHashMap<>();
 
     public UserRepository(){
-        users.put("1", new User("1", "test1@gmail.com", "1AbC!cccccc", "vinny", ""));
-        users.put("2",new User("2", "test2@gmail.com", "1AbC!cccccc", "selina", ""));
-        users.put("3",new User("3", "test3@gmail.com", "1AbC!cccccc", "jun", ""));
+        users.put("1", new User("1", "test1@gmail.com", "1", "vinny", ""));
+        users.put("2",new User("2", "test2@gmail.com", "2", "selina", ""));
+        users.put("3",new User("3", "test3@gmail.com", "3", "jun", ""));
+        users.put("4",new User("4", "test4@gmail.com", "4", "huey", ""));
+        users.put("5",new User("5", "test5@gmail.com", "5", "keryn", ""));
+        users.put("6",new User("6", "test6@gmail.com", "6", "justin", ""));
     }
 
-    public void save(String userId, User user){
+    public void saveUser(User user){
         users.put(user.getId(), user);
     }
 
@@ -29,37 +31,32 @@ public class UserRepository {
         }
     }
 
+    public User findByEmail(String email) {
+        return users.values().stream()
+                .filter(user -> user.getEmail().equals(email))
+                .findFirst()
+                .orElseThrow(() -> new UserNotFoundException());
+    }
+
     public List<User> findAll(){
         return new ArrayList<>(users.values());
     }
 
     public boolean existsById(String id){
-        if(users.containsKey(id)){
-            return true;
-        } else {
-            return false;
-        }
+        return users.containsKey(id);
     }
 
     public boolean existsByEmail(String email) {
-        if(users.containsKey(email)){
-            return true;
-        } else {
-            return false;
-        }
+        return users.values().stream()
+                .anyMatch(user -> user.getEmail().equals(email));
     }
 
     public boolean existsByNickname(String nickname){
-        if(users.containsKey(nickname)){
-            return true;
-        } else {
-            return false;
-        }
+        return users.values().stream()
+                .anyMatch(user -> user.getEmail().equals(nickname));
     }
 
     public void delete(String id){
-        //users.removeIf(user -> user.getId().equals(id));
-        User user = findById(id);
-        users.remove(user);
+        users.remove(findById(id));
     }
 }

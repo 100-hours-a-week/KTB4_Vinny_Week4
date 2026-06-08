@@ -1,12 +1,16 @@
 package com.vinny.project.user;
 
 
+import com.vinny.project.auth.token.TokenRepository;
 import com.vinny.project.response.ApiResponse;
 import com.vinny.project.user.dto.request.UserCreateRequest;
-import com.vinny.project.user.dto.request.UserPatchRequest;
+import com.vinny.project.user.dto.request.UserPatchPasswordRequest;
+import com.vinny.project.user.dto.request.UserPatchProfileRequest;
 import com.vinny.project.user.dto.request.UserSignInRequest;
+import com.vinny.project.user.dto.response.SignInResponse;
 import com.vinny.project.user.dto.response.UserIdResponse;
 import com.vinny.project.user.dto.response.UserResponse;
+import com.vinny.project.user.dto.response.UserSummary;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,26 +20,27 @@ import java.util.List;
 @RestController
 @RequestMapping("/users")
 class UserController {
-
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    UserController(UserService userService, TokenRepository tokenRepository) {
         this.userService = userService;
     }
 
     @PostMapping("/sign-up")
     public ResponseEntity<ApiResponse<UserIdResponse>> signUp(@Valid @RequestBody UserCreateRequest request){
-        UserIdResponse user = userService.addUser(request);
-        return ResponseEntity.status(201).body(ApiResponse.created(user));
+        return ResponseEntity.status(201).body(ApiResponse.success(userService.addUser(request)));
     }
 
     @PostMapping("/sign-in")
-    public ResponseEntity<User> signIn(@Valid @RequestBody UserSignInRequest request){
-        User user = userService.signIn(request);
-        return ResponseEntity.status(200).body(user);
+    public ResponseEntity<ApiResponse<SignInResponse>> signIn(@Valid @RequestBody UserSignInRequest request){
+        return ResponseEntity.status(200).body(ApiResponse.success(userService.signIn(request)));
     }
 
-    //테스트용 전체 유저 API
+    @PostMapping("/logout")
+    public void logout(){
+
+    }
+
     @GetMapping
     public List<User> getUsers(){
         return userService.getUsers();
@@ -43,17 +48,23 @@ class UserController {
 
     @GetMapping("/{id}")
     public ApiResponse<UserResponse> getUser(@PathVariable String id){
-        User user = userService.findById(id);
-        return ApiResponse.ok(new UserResponse(user));
+        return ApiResponse.success(new UserResponse(userService.findById(id)));
     }
 
-    @PatchMapping("/{id}")
-    public void updateUser(@PathVariable String id,@Valid @RequestBody UserPatchRequest request){
-        userService.patch(id, request);
+    @PatchMapping("/{id}/profile")
+    public ApiResponse<UserSummary> updateUserProfile(@PathVariable String id, @Valid @RequestBody UserPatchProfileRequest request){
+        return ApiResponse.success(userService.patchProfile(id, request));
+    }
+
+    @PatchMapping("/{id}/password")
+    public ApiResponse<Object> updateUserPassword(@PathVariable String id, @Valid @RequestBody UserPatchPasswordRequest request){
+        userService.patchPassword(id, request);
+        return ApiResponse.success(null);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable String id){
+    public ResponseEntity<Void> deleteUser(@PathVariable String id){
         userService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

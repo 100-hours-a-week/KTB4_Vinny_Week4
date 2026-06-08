@@ -1,13 +1,12 @@
 package com.vinny.project.post;
 
-import com.oracle.svm.core.annotate.Delete;
 import com.vinny.project.post.dto.request.PostCreateRequest;
 import com.vinny.project.post.dto.response.PostDetailResponse;
 import com.vinny.project.post.dto.response.PostListResponse;
 import com.vinny.project.response.ApiResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -21,33 +20,28 @@ public class PostController {
     }
 
     @PostMapping
-    public Post createPost(@RequestBody PostCreateRequest request) {
-        return postService.createPost(request);
+    public ApiResponse<Post> createPost(@RequestBody PostCreateRequest request) {
+        return ApiResponse.success(postService.createPost(request));
     }
 
     @GetMapping
-    public List<Post> getPosts(){
-        return postService.getPosts();
+    public ApiResponse<List<PostListResponse>> getPosts(){
+        return ApiResponse.success(postService.getPosts());
     }
 
     @GetMapping("/{id}")
     public ApiResponse<PostDetailResponse> getPost(@PathVariable String id) {
-        Post post = postService.findById(id);
-        return ApiResponse.ok(new PostDetailResponse(post));
+        return ApiResponse.success(postService.getPostDetail(id));
     }
 
     @PatchMapping("/{id}")
-    public void updatePost(@PathVariable String id, @RequestBody PostCreateRequest request) {
-        postService.patch(id, request);
+    public ApiResponse<PostDetailResponse> updatePost(@PathVariable String id, @RequestBody PostCreateRequest request) {
+        return ApiResponse.success(postService.patch(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public void deletePost(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<String>> deletePost(@PathVariable String id) {
         postService.delete(id);
+        return ResponseEntity.ok(ApiResponse.success("/posts"));
     }
-
-
-
-
-
 }

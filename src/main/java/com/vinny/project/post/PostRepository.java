@@ -1,13 +1,10 @@
 package com.vinny.project.post;
 
 import com.vinny.project.post.exception.PostNotFoundException;
-import com.vinny.project.user.User;
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.DuplicateFormatFlagsException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

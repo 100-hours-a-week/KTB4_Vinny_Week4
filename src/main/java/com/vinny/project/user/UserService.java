@@ -1,12 +1,17 @@
 package com.vinny.project.user;
 
+import com.vinny.project.auth.token.TokenRepository;
 import com.vinny.project.exception.BusinessException;
 import com.vinny.project.exception.ErrorCode;
 import com.vinny.project.user.dto.request.UserCreateRequest;
-import com.vinny.project.user.dto.request.UserPatchRequest;
+import com.vinny.project.user.dto.request.UserPatchPasswordRequest;
+import com.vinny.project.user.dto.request.UserPatchProfileRequest;
 import com.vinny.project.user.dto.request.UserSignInRequest;
+import com.vinny.project.user.dto.response.SignInResponse;
 import com.vinny.project.user.dto.response.UserIdResponse;
-import com.vinny.project.user.exception.DuplicateNickname;
+import com.vinny.project.user.dto.response.UserSummary;
+import com.vinny.project.user.exception.DuplicateEmailException;
+import com.vinny.project.user.exception.DuplicateNicknameException;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,31 +21,37 @@ import java.util.UUID;
 
 @Service
 public class UserService {
-
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, TokenRepository tokenRepository) {
         this.userRepository = userRepository;
     }
 
     public UserIdResponse addUser(UserCreateRequest request){
-        if(userRepository.existsByEmail(request.getEmail()) || userRepository.existsByNickname(request.getNickname())){
-            throw new DuplicateNickname();
+        if(userRepository.existsByEmail(request.getEmail())){
+            throw new DuplicateEmailException();
+        } else if(userRepository.existsByNickname(request.getNickname())){
+            throw new DuplicateNicknameException();
         }
         String userId = UUID.randomUUID().toString();
         User user = new User(userId, request.getEmail(), request.getPassword(), request.getNickname(), request.getProfileImageUrl());
-        userRepository.save(userId, user);
+        userRepository.saveUser(user);
 
         return new UserIdResponse(user);
     }
 
-    public User signIn(@Valid @RequestBody UserSignInRequest request){
-        for(User user : userRepository.findAll()){
-            if(user.getEmail().equals(request.getEmail()) &&  user.getPassword().equals(request.getPassword())){
-                return user;
-            }
+    public SignInResponse signIn(@Valid @RequestBody UserSignInRequest request){
+        User user = authenticate(request.getEmail(), request.getPassword());
+        String token = UUID.randomUUID().toString();
+        return new SignInResponse(token, user.getId());
+    }
+
+    public User authenticate(String email, String password){
+        User user = userRepository.findByEmail(email);
+        if(!user.getPassword().equals(password)){
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        return null;
+        return user;
     }
 
     public List<User> getUsers(){
@@ -51,24 +62,18 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public void patch(String id, @RequestBody UserPatchRequest request){
+    public UserSummary patchProfile(String id, @RequestBody UserPatchProfileRequest request){
         User user = findById(id);
 
-        if(user == null){
-            return;
-        }
+        user.setNickname(request.getNickname());
+        user.setProfileImageUrl(request.getProfileImageUrl());
 
-        if(request.getPassword() != null && !request.getPassword().isEmpty()){
-            user.setPassword(request.getPassword());
-        }
+        return new UserSummary(user.getNickname(),user.getProfileImageUrl());
+    }
 
-        if(request.getNickname() != null && !request.getNickname().isEmpty()){
-            user.setNickname(request.getNickname());
-        }
-
-        if(request.getProfileImageUrl() != null && !request.getProfileImageUrl().isEmpty()) {
-            user.setProfileImageUrl(request.getProfileImageUrl());
-        }
+    public void patchPassword(String id, @RequestBody UserPatchPasswordRequest request){
+        User user = findById(id);
+        user.setPassword(request.getPassword());
     }
 
     public void delete(String id){
