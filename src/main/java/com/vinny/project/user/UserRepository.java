@@ -54,6 +54,6 @@ public class UserRepository {
     }
 
     public void delete(String id){
-        users.remove(findById(id));
+        users.remove(id);
     }
 }

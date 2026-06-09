@@ -86,6 +86,9 @@ public class UserService {
     }
 
     public void delete(String id){
+        if(!userRepository.existsById(id)){
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
         userRepository.delete(id);
     }
 }
