@@ -23,7 +23,7 @@ import java.util.UUID;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-
+    private static final String DEFAULT_PROFILE_IMAGE_URL = "https://github.com/user-attachments/assets/1668d816-f8d3-483f-80aa-3b960176c557";
     public UserService(UserRepository userRepository, TokenRepository tokenRepository) {
         this.userRepository = userRepository;
     }
@@ -39,6 +39,10 @@ public class UserService {
 
         String userId = UUID.randomUUID().toString();
         User user = new User(userId, request.getEmail(), request.getPassword(), request.getNickname(), request.getProfileImageUrl());
+
+        if(request.getProfileImageUrl() == null || request.getProfileImageUrl().equals("")){
+            user.setProfileImageUrl(DEFAULT_PROFILE_IMAGE_URL);
+        }
         userRepository.saveUser(user);
 
         return new UserIdResponse(user);
@@ -70,6 +74,9 @@ public class UserService {
         User user = findById(id);
         if(userRepository.existsByNickname(request.getNickname())){
             throw new DuplicateNicknameException();
+        }
+        if(request.getProfileImageUrl() == null || request.getProfileImageUrl().equals("")){
+            user.setProfileImageUrl(DEFAULT_PROFILE_IMAGE_URL);
         }
         user.setNickname(request.getNickname());
         user.setProfileImageUrl(request.getProfileImageUrl());
